@@ -24,16 +24,22 @@ class Client
     /** @var Coroutine\Client|\Swoole\Client */
     private $client;
 
+    /** @var int */
     private $messageId = 0;
 
+    /** @var array */
     private $connectData = [];
 
+    /** @var string */
     private $host;
 
+    /** @var int */
     private $port;
 
+    /** @var ClientConfig */
     private $config;
 
+    /** @var int */
     private $clientType;
 
     public const COROUTINE_CLIENT_TYPE = 1;
@@ -223,7 +229,7 @@ class Client
             $this->connect($this->getConnectData('clean_session') ?? true, $this->getConnectData('will') ?? []);
         } elseif ($response === false && $this->client->errCode !== SOCKET_ETIMEDOUT) {
             $this->handleException();
-        } elseif (is_string($response) && strlen($response) > 0) {
+        } elseif (is_string($response) && strlen($response) !== 0) {
             $this->handleVerbose($response);
 
             if ($this->getConfig()->isMQTT5()) {

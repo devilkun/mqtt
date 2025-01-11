@@ -36,6 +36,7 @@ class UnPackV5
             $properties = UnPackProperty::connect($propertiesTotalLength, $remaining);
         }
         $clientId = UnPackTool::string($remaining);
+        $willProperties = [];
         if ($willFlag) {
             $willPropertiesTotalLength = UnPackTool::byte($remaining);
             if ($willPropertiesTotalLength) {
@@ -61,6 +62,7 @@ class UnPackV5
             'user_name' => $userName,
             'password' => $password,
             'keep_alive' => $keepAlive,
+            'client_id' => $clientId,
         ];
 
         if ($propertiesTotalLength) {
@@ -68,8 +70,6 @@ class UnPackV5
         } else {
             unset($package['properties']);
         }
-
-        $package['client_id'] = $clientId;
 
         if ($willFlag) {
             if ($willPropertiesTotalLength) {
