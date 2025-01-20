@@ -40,20 +40,22 @@ class ClientTest extends TestCase
     {
         $topic = 'simps-mqtt/test/base64';
         $base64 = base64_encode(file_get_contents(TESTS_DIR . '/files/wechat.jpg'));
-        $client = new MQTTClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestConnectConfig());
+        $config = getTestConnectConfig();
+        $config->setSwooleConfig(['read_timeout' => 10.0]);
+        $client = new MQTTClient('test.mosquitto.org', SIMPS_MQTT_PORT, $config);
         $client->connect(false);
         $client->subscribe([$topic => 0]);
 
         Coroutine::create(function () use ($topic, $base64) {
-            $client = new MQTTClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestConnectConfig());
+            $client = new MQTTClient('test.mosquitto.org', SIMPS_MQTT_PORT, getTestConnectConfig());
             $client->connect();
             $client->publish($topic, $base64);
         });
 
         $buffer = $client->recv();
-        $this->assertSame($buffer['type'], Types::PUBLISH);
-        $this->assertSame($buffer['topic'], $topic);
-        $this->assertSame(strlen($buffer['message']), strlen($base64));
+        $this->assertSame(Types::PUBLISH, $buffer['type']);
+        $this->assertSame($topic, $buffer['topic']);
+        $this->assertSame(strlen($base64), strlen($buffer['message']));
     }
 
     public function testNonWillWithProtocolException()
@@ -69,7 +71,7 @@ class ClientTest extends TestCase
             $client->connect(false, $will);
         } catch (\Throwable $ex) {
             $this->assertInstanceOf(ProtocolException::class, $ex);
-            $this->assertSame($ex->getMessage(), 'Topic cannot be empty');
+            $this->assertSame('Topic cannot be empty', $ex->getMessage());
         }
     }
 

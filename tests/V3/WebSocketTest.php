@@ -10,20 +10,19 @@ declare(strict_types=1);
  * For the full copyright and license information,
  * please view the LICENSE file that was distributed with this source code.
  */
-namespace SimpsTest\MQTT\V5;
+namespace SimpsTest\MQTT\V3;
 
 use PHPUnit\Framework\TestCase;
-use Simps\MQTT\Client;
 use Simps\MQTT\Exception\ProtocolException;
 use Simps\MQTT\Hex\ReasonCode;
 use Simps\MQTT\Protocol\Types;
-use Swoole\Coroutine;
+use Simps\MQTT\WebSocketClient;
 
 /**
  * @internal
  * @coversNothing
  */
-class PacketTest extends TestCase
+class WebSocketTest extends TestCase
 {
     private static $topic = '';
 
@@ -32,7 +31,7 @@ class PacketTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$topic = 'testtopic/simps-' . rand(100, 999);
-        self::$client = new Client(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestMQTT5ConnectConfig());
+        self::$client = new WebSocketClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_OVER_WEBSOCKET_PORT, getTestConnectConfig());
     }
 
     public static function tearDownAfterClass(): void
@@ -53,26 +52,11 @@ class PacketTest extends TestCase
      */
     public function testSubscribe()
     {
-        $topics = [
-            self::$topic . '/get' => [
-                'qos' => 1,
-                'no_local' => true,
-                'retain_as_published' => true,
-                'retain_handling' => 2,
-            ],
-            self::$topic . '/update' => [
-                'qos' => 2,
-                'no_local' => false,
-                'retain_as_published' => true,
-                'retain_handling' => 2,
-            ],
-        ];
+        $topics[self::$topic] = 1;
         $res = self::$client->subscribe($topics);
         $this->assertIsArray($res);
         $this->assertSame(Types::SUBACK, $res['type']);
-        $this->assertIsArray($res['codes']);
         $this->assertSame(ReasonCode::GRANTED_QOS_1, $res['codes'][0]);
-        $this->assertSame(ReasonCode::GRANTED_QOS_2, $res['codes'][1]);
     }
 
     /**
@@ -80,26 +64,20 @@ class PacketTest extends TestCase
      */
     public function testPublish()
     {
-        Coroutine::create(function () {
-            $client = new Client(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestMQTT5ConnectConfig());
-            $res = $client->connect();
-            $this->assertIsArray($res);
-            $buffer = $client->publish(self::$topic . '/get', 'hello,simps', 1);
-            $this->assertIsArray($buffer);
-            $this->assertSame(Types::PUBACK, $buffer['type']);
-            $this->assertSame('Success', ReasonCode::getReasonPhrase($buffer['code']));
-        });
+        $buffer = self::$client->publish(self::$topic, 'hello,simps', 1);
+        $this->assertIsArray($buffer);
+        $this->assertSame(Types::PUBACK, $buffer['type']);
     }
 
     /**
-     * @depends testSubscribe
+     * @depends testPublish
      */
     public function testRecv()
     {
         $buffer = self::$client->recv();
         $this->assertIsArray($buffer);
         $this->assertSame(Types::PUBLISH, $buffer['type']);
-        $this->assertSame(self::$topic . '/get', $buffer['topic']);
+        $this->assertSame(self::$topic, $buffer['topic']);
         $this->assertSame('hello,simps', $buffer['message']);
     }
 
@@ -118,11 +96,9 @@ class PacketTest extends TestCase
      */
     public function testUnsubscribe()
     {
-        $status = self::$client->unSubscribe([self::$topic . '/get', self::$topic . '/update']);
+        $status = self::$client->unSubscribe([self::$topic]);
         $this->assertIsArray($status);
         $this->assertSame(Types::UNSUBACK, $status['type']);
-        $this->assertSame('Success', ReasonCode::getReasonPhrase($status['codes'][0]));
-        $this->assertSame('Success', ReasonCode::getReasonPhrase($status['codes'][1]));
     }
 
     /**
@@ -136,10 +112,10 @@ class PacketTest extends TestCase
 
     public function testPublishNonTopic()
     {
-        $client = new Client(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestMQTT5ConnectConfig());
+        $client = new WebSocketClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_OVER_WEBSOCKET_PORT, getTestConnectConfig());
         $client->connect();
         $this->expectException(ProtocolException::class);
-        $this->expectExceptionMessage('Topic cannot be empty or need to set topic_alias');
+        $this->expectExceptionMessage('Topic cannot be empty');
         $client->publish('', 'hello,simps');
     }
 }

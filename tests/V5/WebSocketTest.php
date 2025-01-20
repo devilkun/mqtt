@@ -13,17 +13,17 @@ declare(strict_types=1);
 namespace SimpsTest\MQTT\V5;
 
 use PHPUnit\Framework\TestCase;
-use Simps\MQTT\Client;
 use Simps\MQTT\Exception\ProtocolException;
 use Simps\MQTT\Hex\ReasonCode;
 use Simps\MQTT\Protocol\Types;
+use Simps\MQTT\WebSocketClient;
 use Swoole\Coroutine;
 
 /**
  * @internal
  * @coversNothing
  */
-class PacketTest extends TestCase
+class WebSocketTest extends TestCase
 {
     private static $topic = '';
 
@@ -32,7 +32,7 @@ class PacketTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$topic = 'testtopic/simps-' . rand(100, 999);
-        self::$client = new Client(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestMQTT5ConnectConfig());
+        self::$client = new WebSocketClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_OVER_WEBSOCKET_PORT, getTestMQTT5ConnectConfig());
     }
 
     public static function tearDownAfterClass(): void
@@ -81,7 +81,7 @@ class PacketTest extends TestCase
     public function testPublish()
     {
         Coroutine::create(function () {
-            $client = new Client(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestMQTT5ConnectConfig());
+            $client = new WebSocketClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_OVER_WEBSOCKET_PORT, getTestMQTT5ConnectConfig());
             $res = $client->connect();
             $this->assertIsArray($res);
             $buffer = $client->publish(self::$topic . '/get', 'hello,simps', 1);
@@ -136,7 +136,7 @@ class PacketTest extends TestCase
 
     public function testPublishNonTopic()
     {
-        $client = new Client(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_PORT, getTestMQTT5ConnectConfig());
+        $client = new WebSocketClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_OVER_WEBSOCKET_PORT, getTestMQTT5ConnectConfig());
         $client->connect();
         $this->expectException(ProtocolException::class);
         $this->expectExceptionMessage('Topic cannot be empty or need to set topic_alias');

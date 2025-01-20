@@ -16,30 +16,47 @@ use Simps\MQTT\Protocol\ProtocolInterface;
 
 class ClientConfig extends AbstractConfig
 {
+    /** @var string */
     protected $clientId = '';
 
+    /** @var array */
     protected $swooleConfig = [
         'open_mqtt_protocol' => true,
     ];
 
+    /** @var array */
+    protected $headers = [
+        'Sec-Websocket-Protocol' => 'mqtt',
+    ];
+
+    /** @var string */
     protected $userName = '';
 
+    /** @var string */
     protected $password = '';
 
+    /** @var int */
     protected $keepAlive = 0;
 
+    /** @var string */
     protected $protocolName = ProtocolInterface::MQTT_PROTOCOL_NAME;
 
+    /** @var int */
     protected $protocolLevel = ProtocolInterface::MQTT_PROTOCOL_LEVEL_3_1_1;
 
+    /** @var array */
     protected $properties = [];
 
+    /** @var int */
     protected $delay = 3000;
 
-    protected $maxAttempts = -1;
+    /** @var int */
+    protected $maxAttempts = 0;
 
+    /** @var int */
     protected $sockType = SWOOLE_SOCK_TCP;
 
+    /** @var int */
     protected $verbose = MQTT_VERBOSE_NONE;
 
     public function getClientId(): string
@@ -62,6 +79,18 @@ class ClientConfig extends AbstractConfig
     public function setSwooleConfig(array $config): self
     {
         $this->swooleConfig = array_merge($this->swooleConfig, $config);
+
+        return $this;
+    }
+
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    public function setHeaders(array $headers): self
+    {
+        $this->headers = array_merge($this->headers, $headers);
 
         return $this;
     }
@@ -188,7 +217,7 @@ class ClientConfig extends AbstractConfig
         return $this->verbose;
     }
 
-    public function setVerbose(int $verbose)
+    public function setVerbose(int $verbose): self
     {
         $this->verbose = $verbose;
 

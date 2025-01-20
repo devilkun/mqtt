@@ -11,21 +11,20 @@
 
 include_once __DIR__ . '/bootstrap.php';
 
-use Simps\MQTT\Client;
+use Simps\MQTT\WebSocketClient;
 use Simps\MQTT\Protocol\Types;
 use Swoole\Coroutine;
 
 Coroutine\run(function () {
-    $client = new Client(SIMPS_MQTT_LOCAL_HOST, SIMPS_MQTT_PORT, getTestConnectConfig());
+    $client = new WebSocketClient(SIMPS_MQTT_REMOTE_HOST, SIMPS_MQTT_OVER_WEBSOCKET_PORT, getTestConnectConfig());
     $will = [
-        'topic' => 'simps-mqtt/user001/delete',
+        'topic' => 'simps-mqtt/users/byebye',
         'qos' => 0,
         'retain' => 0,
         'message' => 'byebye',
     ];
     $client->connect(true, $will);
-    $topics['simps-mqtt/user001/get'] = 0;
-    $topics['simps-mqtt/user001/update'] = 1;
+    $topics['simps-mqtt/users/#'] = 0;
     $client->subscribe($topics);
     $timeSincePing = time();
     while (true) {
